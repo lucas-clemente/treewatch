@@ -9,7 +9,8 @@ Watch a file system tree for changes.
 watcher, err := NewTreeWatcher("/path/to/dir")
 c := watcher.Changes()
 
-// Read struct{}s from c each time something changes
+filename := <-c
+// filename changed (e.g. created, modified, removed)
 
 watcher.Stop()
 ```

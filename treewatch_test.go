@@ -35,7 +35,7 @@ var _ = Describe("Treewatch", func() {
 		watcher, err := treewatch.NewTreeWatcher(dir)
 		Expect(err).To(BeNil())
 		Expect(ioutil.WriteFile(filename, []byte("foo"), 0644)).To(BeNil())
-		<-watcher.Changes()
+		Expect(<-watcher.Changes()).To(Equal(filename))
 		watcher.Stop()
 		_, ok := <-watcher.Changes()
 		Expect(ok).To(BeFalse())

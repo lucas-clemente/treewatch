@@ -3,8 +3,8 @@ package treewatch
 // A TreeWatcher watches a file system tree and sends notifications
 // when anything happens.
 type TreeWatcher interface {
-	// A struct{} is sent every time something in the tree changes.
-	Changes() <-chan struct{}
+	// The path of the directory the change happened in is sent here.
+	Changes() <-chan string
 
 	// Stop the tree watcher
 	Stop()

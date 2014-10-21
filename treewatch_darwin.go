@@ -13,12 +13,13 @@ void treeWatcherCallbackC(ConstFSEventStreamRef streamRef, void *clientCallBackI
 import "C"
 
 import (
+	"reflect"
 	"runtime"
 	"unsafe"
 )
 
 type treeWatcherDarwin struct {
-	changes chan struct{}
+	changes chan string
 	runloop C.CFRunLoopRef
 }
 
@@ -28,7 +29,7 @@ func newTreeWatcherImpl(path string) (TreeWatcher, error) {
 	pathsRef := C.CFArrayCreate(nil, &cPathsArray, 1, nil)
 
 	tw := &treeWatcherDarwin{
-		changes: make(chan struct{}),
+		changes: make(chan string),
 	}
 
 	setupDone := make(chan struct{})
@@ -44,7 +45,7 @@ func newTreeWatcherImpl(path string) (TreeWatcher, error) {
 			pathsRef,
 			C.FSEventStreamEventId(uint64(0xFFFFFFFFFFFFFFFF)),
 			C.CFTimeInterval(0.1),
-			C.kFSEventStreamCreateFlagFileEvents|C.kFSEventStreamCreateFlagNoDefer,
+			C.kFSEventStreamCreateFlagNoDefer|C.kFSEventStreamCreateFlagFileEvents,
 		)
 		tw.runloop = C.CFRunLoopGetCurrent()
 		C.FSEventStreamScheduleWithRunLoop(stream, tw.runloop, C.kCFRunLoopDefaultMode)
@@ -64,12 +65,28 @@ func newTreeWatcherImpl(path string) (TreeWatcher, error) {
 }
 
 //export treeWatcherCallback
-func treeWatcherCallback(treeWatcherC unsafe.Pointer) {
+func treeWatcherCallback(
+	treeWatcherC unsafe.Pointer,
+	numEvents C.size_t,
+	pathsC unsafe.Pointer,
+	flagsC unsafe.Pointer,
+) {
 	tw := (*treeWatcherDarwin)(treeWatcherC)
-	tw.changes <- struct{}{}
+
+	// Unpack C arrays
+	pathsHeader := reflect.SliceHeader{
+		Data: uintptr(pathsC),
+		Len:  int(numEvents),
+		Cap:  int(numEvents),
+	}
+	paths := *(*[]*C.char)(unsafe.Pointer(&pathsHeader))
+
+	for _, p := range paths {
+		tw.changes <- C.GoString(p)
+	}
 }
 
-func (tw *treeWatcherDarwin) Changes() <-chan struct{} {
+func (tw *treeWatcherDarwin) Changes() <-chan string {
 	return tw.changes
 }
 
