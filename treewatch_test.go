@@ -41,4 +41,16 @@ var _ = Describe("Treewatch", func() {
 		for _ = range watcher.Changes() {
 		}
 	})
+
+	It("listens for removes", func() {
+		Expect(ioutil.WriteFile(filename, []byte("foo"), 0644)).To(BeNil())
+		watcher, err := treewatch.NewTreeWatcher(dir)
+		Expect(err).To(BeNil())
+		Expect(os.Remove(filename)).To(BeNil())
+		Expect(<-watcher.Changes()).To(Equal(filename))
+		watcher.Stop()
+		// It should close soon
+		for _ = range watcher.Changes() {
+		}
+	})
 })

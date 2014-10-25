@@ -13,16 +13,19 @@ package treewatch
 import "C"
 import (
 	"fmt"
+	"log"
 	"unsafe"
 )
 
 type treeWatcherLinux struct {
+	cPath   *C.char
 	changes chan string
 	stopped bool
 }
 
 func newTreeWatcherImpl(path string) (TreeWatcher, error) {
 	tw := &treeWatcherLinux{
+		cPath:   C.CString(path),
 		changes: make(chan string),
 		stopped: false,
 	}
@@ -32,7 +35,7 @@ func newTreeWatcherImpl(path string) (TreeWatcher, error) {
 		return nil, makeInotifyErr("inotifytools_initialize")
 	}
 
-	errC = C.inotifytools_watch_recursively(C.CString(path), C.IN_CREATE|C.IN_DELETE|C.IN_MODIFY|C.IN_MOVED_FROM|C.IN_MOVED_TO)
+	errC = C.inotifytools_watch_recursively(tw.cPath, C.IN_CREATE|C.IN_DELETE|C.IN_MODIFY|C.IN_MOVED_FROM|C.IN_MOVED_TO)
 	if errC != 1 {
 		return nil, makeInotifyErr("inotifytools_watch_recursively")
 	}
@@ -66,6 +69,10 @@ func (tw *treeWatcherLinux) Changes() <-chan string {
 
 func (tw *treeWatcherLinux) Stop() {
 	tw.stopped = true
+	errC := C.inotifytools_remove_watch_by_filename(tw.cPath)
+	if errC != 1 {
+		log.Print(makeInotifyErr("inotifytools_remove_watch_by_filename"))
+	}
 	// Read all remaining
 	go func() {
 		for _ = range <-tw.changes {
