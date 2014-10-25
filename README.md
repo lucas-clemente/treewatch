@@ -18,6 +18,7 @@ watcher.Stop()
 Currently supports:
 
 - Darwin (OS X)
+- Linux (requires `libinotifytools`)
 
 Todo:
 

@@ -37,7 +37,8 @@ var _ = Describe("Treewatch", func() {
 		Expect(ioutil.WriteFile(filename, []byte("foo"), 0644)).To(BeNil())
 		Expect(<-watcher.Changes()).To(Equal(filename))
 		watcher.Stop()
-		_, ok := <-watcher.Changes()
-		Expect(ok).To(BeFalse())
+		// It should close soon
+		for _ = range watcher.Changes() {
+		}
 	})
 })

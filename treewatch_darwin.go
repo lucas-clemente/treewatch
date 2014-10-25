@@ -92,4 +92,9 @@ func (tw *treeWatcherDarwin) Changes() <-chan string {
 
 func (tw *treeWatcherDarwin) Stop() {
 	C.CFRunLoopStop(tw.runloop)
+	// Read all remaining
+	go func() {
+		for _ = range <-tw.changes {
+		}
+	}()
 }
