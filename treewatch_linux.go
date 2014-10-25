@@ -30,12 +30,7 @@ func newTreeWatcherImpl(path string) (TreeWatcher, error) {
 		stopped: false,
 	}
 
-	errC := C.inotifytools_initialize()
-	if errC != 1 {
-		return nil, makeInotifyErr("inotifytools_initialize")
-	}
-
-	errC = C.inotifytools_watch_recursively(tw.cPath, C.IN_CREATE|C.IN_DELETE|C.IN_MODIFY|C.IN_MOVED_FROM|C.IN_MOVED_TO)
+	errC := C.inotifytools_watch_recursively(tw.cPath, C.IN_CREATE|C.IN_DELETE|C.IN_MODIFY|C.IN_MOVED_FROM|C.IN_MOVED_TO)
 	if errC != 1 {
 		return nil, makeInotifyErr("inotifytools_watch_recursively")
 	}
@@ -78,4 +73,11 @@ func (tw *treeWatcherLinux) Stop() {
 		for _ = range <-tw.changes {
 		}
 	}()
+}
+
+func init() {
+	errC := C.inotifytools_initialize()
+	if errC != 1 {
+		panic(makeInotifyErr("inotifytools_initialize"))
+	}
 }
